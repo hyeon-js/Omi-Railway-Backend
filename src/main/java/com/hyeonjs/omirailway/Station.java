@@ -1,11 +1,13 @@
 package com.hyeonjs.omirailway;
 
+import java.util.List;
+
 public class Station {
 
 	private String station;
-	private Train[] up, down;
+	private List<Train> up, down;
 
-	public Station(String station, Train[] up, Train[] down) {
+	public Station(String station, List<Train> up, List<Train> down) {
 		this.station = station;
 		this.up = up;
 		this.down = down;
@@ -15,10 +17,10 @@ public class Station {
 		return station;
 	}
 	
-	public Train[] getUp() {
+	public List<Train> getUp() {
 		return up;
 	}
-	public Train[] getDown() {
+	public List<Train> getDown() {
 		return down;
 	}
 

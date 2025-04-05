@@ -1,6 +1,7 @@
 package com.hyeonjs.omirailway;
 
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 
 @Service
 // @RequiredArgsConstructor
@@ -15,7 +16,7 @@ public class TrainLocatinService {
         Station[] result = new Station[list.length];
 
         for (int n = 0; n < list.length; n++) {
-            result[n] = new Station(list[n], null, null);
+            result[n] = new Station(list[n], new ArrayList<Station.Train>(), new ArrayList<Station.Train>());
         }
 
         return result;
