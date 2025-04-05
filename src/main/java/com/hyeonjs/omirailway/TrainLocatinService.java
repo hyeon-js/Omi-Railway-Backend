@@ -95,7 +95,13 @@ public class TrainLocatinService {
     }
 
     private TrainTimeTable[] getTimeTable() {
-        String timetableRaw = new TimeTableRepository().read("holidays.json");
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        int day = now.getDayOfWeek().getValue();
+        String fileName = "weekdays.json";
+        if (day == 6 || day == 7) fileName = "holidays.json";
+        
+
+        String timetableRaw = new TimeTableRepository().read(fileName);
         JSONObject json = new JSONObject(timetableRaw);
         Iterator<String> keys = json.keys();
         ArrayList<TrainTimeTable> data = new ArrayList<>();
