@@ -1,7 +1,16 @@
 package com.hyeonjs.omirailway;
 
 import org.springframework.stereotype.Service;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Iterator;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Service
 // @RequiredArgsConstructor
@@ -14,22 +23,10 @@ public class TrainLocatinService {
         if (list == null) return null;
 
         Station[] result = new Station[list.length];
-
         for (int n = 0; n < list.length; n++) {
             result[n] = new Station(list[n], new ArrayList<Station.Train>(), new ArrayList<Station.Train>());
         }
-
-        return result;
-
-        // switch(line) {
-        //     case "honsen":
-        //         return "[\"본선\"]";
-        //     case "yokaichi":
-        //         return "[\"요카이치선\"]";
-        //     case "taga":
-        //         return "[\"타가선\"]";
-        // }
-        
+        return applyTrainList(result, list);
     }
 
     public String[] getStationList(String line) {
@@ -43,5 +40,85 @@ public class TrainLocatinService {
         }
         return null;
     }
+
+    private Station[] applyTrainList(Station[] result, String[] stns) {
+        TrainTimeTable[] data = getTimeTable();
+        LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
+        int hour = now.getHour();
+        if (hour == 0) hour = 24;
+        // hour = 12;
+        int now_m = 60*hour + now.getMinute();
+        ArrayList<Train> list = new ArrayList<>();
+
+        for (TrainTimeTable datum : data) {
+            // System.out.println(datum.trainNo + ", " + hour + ":"+now.getMinute());
+            // System.out.println(datum.trainNo + ", " + datum.data[0].tm + ", " + datum.data[datum.data.length - 1].tm);
+            // System.out.println(datum.trainNo + ", " + now_m);
+            // System.out.println(datum.trainNo + ", " + datum.data[0].ts + ", " + datum.data[datum.data.length - 1].ts);
+            if (now_m < datum.data[0].ts) continue; //운행이 아직 시작되지 않은 열차
+            if (datum.data[datum.data.length - 1].ts < now_m) continue; //운행이 끝난 열차
+
+            String pos = calcTrainPos(now_m, datum.data);
+            int index = stn2index(stns, pos);
+            // System.out.println(pos + ", " + index);
+            if (index == -1) continue; //다른 노선에 있는 열차 
+        
+            System.out.println(datum.trainNo);
+
+            Station.Train train = new Station.Train(datum.trainNo, datum.terminal);
+            if (Integer.parseInt(datum.trainNo) % 2 == 0) {
+                result[index].up.add(train);
+            }
+            else {
+                result[index].down.add(train);
+            }
+
+        }
+
+        
+        return result;
+    }
+
+    private String calcTrainPos(int now, TrainTimeTable.Time[] time) {
+        for (int n = time.length - 1; n >= 0; n--) {
+            if (time[n].ts == now) return time[n].stn;
+            if (time[n].ts < now) return time[n + 1].stn;
+        }
+        return null; //어차피 여긴 실행될 일이 없음
+    }
+
+    private int stn2index(String[] stns, String stn) {
+        for (int n = 0; n < stns.length; n++) {
+            if (stn.equals(stns[n].split(" ")[0])) return n;
+        }
+        return -1;
+    }
+
+    private TrainTimeTable[] getTimeTable() {
+        String timetableRaw = new TimeTableRepository().read("holidays.json");
+        JSONObject json = new JSONObject(timetableRaw);
+        Iterator<String> keys = json.keys();
+        ArrayList<TrainTimeTable> data = new ArrayList<>();
+        while (keys.hasNext()) {
+            String trainNo = keys.next();
+            String terminal = null;
+            JSONArray timetable;
+            if (json.get(trainNo) instanceof JSONObject) {
+                JSONObject cache = json.getJSONObject(trainNo);
+                terminal = cache.getString("terminal");
+                timetable = cache.getJSONArray("tm");
+            } else {
+                timetable = json.getJSONArray(trainNo);
+            }
+            TrainTimeTable.Time[] time = new TrainTimeTable.Time[timetable.length()];
+            for (int n = 0; n < timetable.length(); n++) {
+                JSONObject t = timetable.getJSONObject(n);
+                time[n] = new TrainTimeTable.Time(t.getString("stn"), t.getString("tm"));
+            }
+            data.add(new TrainTimeTable(trainNo, time, terminal));
+        }
+        return data.toArray(new TrainTimeTable[0]);
+    }
+    
 
 }
