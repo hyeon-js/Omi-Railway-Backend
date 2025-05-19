@@ -13,7 +13,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 
 @Service
-// @RequiredArgsConstructor
 public class TrainLocatinService {
 
     private final TimeTableRepository ttr = new TimeTableRepository();
@@ -47,15 +46,10 @@ public class TrainLocatinService {
         LocalTime now = LocalTime.now(ZoneId.of("Asia/Seoul"));
         int hour = now.getHour();
         if (hour == 0) hour = 24;
-        // hour = 12;
         int now_m = 60*hour + now.getMinute();
         ArrayList<Train> list = new ArrayList<>();
 
         for (TrainTimeTable datum : data) {
-            // System.out.println(datum.trainNo + ", " + hour + ":"+now.getMinute());
-            // System.out.println(datum.trainNo + ", " + datum.data[0].tm + ", " + datum.data[datum.data.length - 1].tm);
-            // System.out.println(datum.trainNo + ", " + now_m);
-            // System.out.println(datum.trainNo + ", " + datum.data[0].ts + ", " + datum.data[datum.data.length - 1].ts);
             if (now_m < datum.data[0].ts) continue; //운행이 아직 시작되지 않은 열차
             if (datum.data[datum.data.length - 1].ts < now_m) continue; //운행이 끝난 열차
 
@@ -101,7 +95,6 @@ public class TrainLocatinService {
         String fileName = "weekdays.json";
         if (day == 6 || day == 7) fileName = "holidays.json";
         
-
         String timetableRaw = new TimeTableRepository().read(fileName);
         JSONObject json = new JSONObject(timetableRaw);
         Iterator<String> keys = json.keys();
